@@ -3,7 +3,6 @@ from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium_stealth import stealth
 from webdriver_manager.chrome import ChromeDriverManager
-from openpyxl import load_workbook
 
 driver = webdriver.Chrome(ChromeDriverManager().install())
 options = webdriver.ChromeOptions()
