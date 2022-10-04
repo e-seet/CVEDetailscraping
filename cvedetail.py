@@ -158,18 +158,18 @@ def writeToCSV(year):
         for i in cveDetails:
             writer.writerow(i)
 
-    header2 = ["CVE ID", "#", "Product Type", "Vendor", "Product", "Version"]
+    header2 = ["CVE ID", "#", "Product Type", "Vendor", "Product", "Version", "Update", "Edition", "Language"]
     # CSV file containing details on products affected
     with open(f'cveProducts{year}.csv', 'w', newline='') as f:
         # create the csv writer
         writer = csv.writer(f)
         writer.writerow(header2)
         for i in affectedProducts:
-            writer.writerow(i[:6])
+            writer.writerow(i)
 
 # list includes number of pages for the year, sha and total number of cve records for the year
-numOfpages = {'2022':[227, 'd379b99e409beb3e8822b833b9d92abdf4097feb', '11308'], '2021':[338, 'c2af181acc00f9c48c361450a6d53e25a002e412', '16873'], '2020':[312, '03a9f57c6a47567bde261912fdb6d3ae622905e7', '15555'], '2019':[307, '6998c9b0e476e9f2dcbfd6ebff9503d774847252', '15306']}
-# numOfpages = {'2015':[119, '99f0a8da10052844e77baad5467f2e32d90c05fe', '5913'], '2016':[117, '7b19190aa3dbaa35d014ff44a5cf607bec3f4565', '5837'], '2017':[266, '726cb9ed34d371bec461bce4d79640eb0f40a3ed', '13269'], '2018':[296, '6988686c94470e073608fae0b039e4d06272a47d', '14759']}
+# numOfpages = {'2022':[227, 'd379b99e409beb3e8822b833b9d92abdf4097feb', '11308'], '2021':[338, 'c2af181acc00f9c48c361450a6d53e25a002e412', '16873'], '2017':[266, '726cb9ed34d371bec461bce4d79640eb0f40a3ed', '13269'], '2015':[119, '99f0a8da10052844e77baad5467f2e32d90c05fe', '5913'], }
+numOfpages = {'2020':[312, '03a9f57c6a47567bde261912fdb6d3ae622905e7', '15555'], '2019':[307, '6998c9b0e476e9f2dcbfd6ebff9503d774847252', '15306'], '2018':[296, '6988686c94470e073608fae0b039e4d06272a47d', '14759'], '2016':[117, '7b19190aa3dbaa35d014ff44a5cf607bec3f4565', '5837']}
 def main():
     for year in numOfpages:
         CveAllPageLinks(year, numOfpages[year][0], numOfpages[year][1], numOfpages[year][2])
