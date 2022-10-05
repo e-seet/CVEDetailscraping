@@ -21,19 +21,20 @@ stealth(driver,
         fix_hairline=True,
         )
 
-pageLinks = []
+
 # Get all the pages from 1 to last
 def CveAllPageLinks(year, pages, sha, trc):
-
+    pageLinks = []
     for page in range(1, pages+1):
         thelink = f"https://www.cvedetails.com/vulnerability-list.php?vendor_id=0&product_id=0&version_id=0&page={page}&hasexp=0&opdos=0&opec=0&opov=0&opcsrf=0&opgpriv=0&opsqli=0&opxss=0&opdirt=0&opmemc=0&ophttprs=0&opbyp=0&opfileinc=0&opginf=0&cvssscoremin=4&cvssscoremax=10&year={year}&month=0&cweid=0&order=1&trc={trc}&sha={sha}"
         if thelink not in pageLinks:
             pageLinks.append(thelink)
+    return pageLinks
 
-linkList = []
+
 # Get all the links to each CVE in a page
 def CveSinglePageLinks(pageLinks):
-
+    linkList = []
     for x in pageLinks:
         driver.get(x)
         page_source = driver.page_source
@@ -43,11 +44,12 @@ def CveSinglePageLinks(pageLinks):
             thelink = "https://www.cvedetails.com" + a['href']
             if thelink not in linkList:
                 linkList.append(thelink)
+    return linkList
 
 # Scrape info from website about each CVE
-cveDetails = []
-affectedProducts = []
 def CveDetails(linkList):
+    cveDetails = []
+    affectedProducts = []
     for link in linkList:
         driver.get(link)
         page_source = driver.page_source
@@ -145,9 +147,10 @@ def CveDetails(linkList):
             # else:
             #     cveDetail.append('-')
             cveDetails.append(cveDetail)
+    return cveDetails, affectedProducts
 
 # Write the cve details to CSV file
-def writeToCSV(year):
+def writeToCSV(year, cveDetails, affectedProducts):
     header1 = ["CVE ID", 'Link to CVE', 'CVSS Score', 'Confidentiality Impact', 'Integrity Impact',
               'Availability Impact', 'Authentication', 'Gained Access', 'Vulnerability Type(s)']
     # CSV file containing details on CSV
@@ -172,10 +175,10 @@ def writeToCSV(year):
 numOfpages = {'2020':[312, '03a9f57c6a47567bde261912fdb6d3ae622905e7', '15555'], '2019':[307, '6998c9b0e476e9f2dcbfd6ebff9503d774847252', '15306'], '2018':[296, '6988686c94470e073608fae0b039e4d06272a47d', '14759'], '2016':[117, '7b19190aa3dbaa35d014ff44a5cf607bec3f4565', '5837']}
 def main():
     for year in numOfpages:
-        CveAllPageLinks(year, numOfpages[year][0], numOfpages[year][1], numOfpages[year][2])
-        CveSinglePageLinks(pageLinks)
-        CveDetails(linkList)
-        writeToCSV(year)
+        pageLinks = CveAllPageLinks(year, numOfpages[year][0], numOfpages[year][1], numOfpages[year][2])
+        linkList = CveSinglePageLinks(pageLinks)
+        cveDetails, affectedProducts = CveDetails(linkList)
+        writeToCSV(year, cveDetails, affectedProducts)
     driver.close()
 
 if __name__ == '__main__':
