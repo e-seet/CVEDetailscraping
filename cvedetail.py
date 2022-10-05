@@ -126,11 +126,11 @@ def CveDetails(linkList):
             cveDetail.append(cveID)
             cveDetail.append(link)
             cveDetail.append(cvssScore)
-            cveDetail.append(confidentialityImpact[:confidentialityImpact.index('\n')])
-            cveDetail.append(integrityImpact[:integrityImpact.index('\n')])
-            cveDetail.append(availabilityImpact[:availabilityImpact.index('\n')])
+            cveDetail.append(confidentialityImpact[:confidentialityImpact.find('\n')])
+            cveDetail.append(integrityImpact[:integrityImpact.find('\n')])
+            cveDetail.append(availabilityImpact[:availabilityImpact.find('\n')])
             if "???" not in authentication:
-                cveDetail.append(authentication[:authentication.index('\n')])
+                cveDetail.append(authentication[:authentication.find('\n')])
             else:
                 cveDetail.append(authentication)
             cveDetail.append(gainedAccess)
