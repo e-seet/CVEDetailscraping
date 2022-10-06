@@ -1,0 +1,6 @@
+.vscode
+.prettierrc
+chromedriver
+.bash_profile
+.prettierignore
+.DS_store

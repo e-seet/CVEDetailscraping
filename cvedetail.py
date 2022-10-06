@@ -46,6 +46,11 @@ def CveSinglePageLinks(pageLinks):
                 linkList.append(thelink)
     return linkList
 
+
+def basicCveDetail():
+    print("ok lo")
+
+
 # Scrape info from website about each CVE
 def CveDetails(linkList):
     cveDetails = []
@@ -60,12 +65,18 @@ def CveDetails(linkList):
         cveID = link[link.find('cve/') + 4:-1]
         cvssScore = str(soup.find("div", {"class": "cvssbox"}))
         cvssScore = cvssScore[cvssScore.find('>') + 1:cvssScore.find('</div>')]
-        confidentialityImpact = text[text.find('Confidentiality') + len('Confidentiality Impact') + 1:text.find('Integrity Impact') - 3]
-        integrityImpact = text[text.find('Integrity') + len('Integrity Impact') + 1:text.find('Availability Impact') - 3]
-        availabilityImpact = text[text.find('Availability') + len('Availability Impact') + 1:text.find('Access Complexity') - 3]
-        authentication = text[text.find('Authentication') + len('Authentication') + 1:text.find('Gained Access') - 3]
-        gainedAccess = text[text.find('Gained Access') + len('Gained Access') + 1:text.find('Vulnerability Type(s)') - 3]
-        vulnerabilityType = text[text.find('Vulnerability Type(s)') + len('Vulnerability Type(s)') + 2:text.find('CWE ID') - 3]
+        confidentialityImpact = text[text.find(
+            'Confidentiality') + len('Confidentiality Impact') + 1:text.find('Integrity Impact') - 3]
+        integrityImpact = text[text.find(
+            'Integrity') + len('Integrity Impact') + 1:text.find('Availability Impact') - 3]
+        availabilityImpact = text[text.find(
+            'Availability') + len('Availability Impact') + 1:text.find('Access Complexity') - 3]
+        authentication = text[text.find(
+            'Authentication') + len('Authentication') + 1:text.find('Gained Access') - 3]
+        gainedAccess = text[text.find(
+            'Gained Access') + len('Gained Access') + 1:text.find('Vulnerability Type(s)') - 3]
+        vulnerabilityType = text[text.find(
+            'Vulnerability Type(s)') + len('Vulnerability Type(s)') + 2:text.find('CWE ID') - 3]
 
         # To check if CVEs have multiple vulnerability types
         index1 = 0
@@ -99,9 +110,11 @@ def CveDetails(linkList):
             for j in range(24, len(vulnProduct)):
                 if vulnProduct[j].startswith('td'):
                     if vulnProduct[j][vulnProduct[j].find('>') + 1:] != '':
-                        productList.append(vulnProduct[j][vulnProduct[j].find('>') + 1:])
+                        productList.append(
+                            vulnProduct[j][vulnProduct[j].find('>') + 1:])
                 elif vulnProduct[j].startswith('a'):
-                    productList.append(vulnProduct[j][vulnProduct[j].find('>') + 1:])
+                    productList.append(
+                        vulnProduct[j][vulnProduct[j].find('>') + 1:])
             # Counting the number of products affected
             for i in range(len(vulnProduct)):
                 if 'td class="num">' in vulnProduct[i]:
@@ -126,9 +139,11 @@ def CveDetails(linkList):
             cveDetail.append(cveID)
             cveDetail.append(link)
             cveDetail.append(cvssScore)
-            cveDetail.append(confidentialityImpact[:confidentialityImpact.find('\n')])
+            cveDetail.append(
+                confidentialityImpact[:confidentialityImpact.find('\n')])
             cveDetail.append(integrityImpact[:integrityImpact.find('\n')])
-            cveDetail.append(availabilityImpact[:availabilityImpact.find('\n')])
+            cveDetail.append(
+                availabilityImpact[:availabilityImpact.find('\n')])
             if "???" not in authentication:
                 cveDetail.append(authentication[:authentication.find('\n')])
             else:
@@ -150,9 +165,11 @@ def CveDetails(linkList):
     return cveDetails, affectedProducts
 
 # Write the cve details to CSV file
+
+
 def writeToCSV(year, cveDetails, affectedProducts):
     header1 = ["CVE ID", 'Link to CVE', 'CVSS Score', 'Confidentiality Impact', 'Integrity Impact',
-              'Availability Impact', 'Authentication', 'Gained Access', 'Vulnerability Type(s)']
+               'Availability Impact', 'Authentication', 'Gained Access', 'Vulnerability Type(s)']
     # CSV file containing details on CSV
     with open(f'cveDetails{year}.csv', 'w', newline='') as f:
         # create the csv writer
@@ -161,7 +178,8 @@ def writeToCSV(year, cveDetails, affectedProducts):
         for i in cveDetails:
             writer.writerow(i)
 
-    header2 = ["CVE ID", "#", "Product Type", "Vendor", "Product", "Version", "Update", "Edition", "Language"]
+    header2 = ["CVE ID", "#", "Product Type", "Vendor",
+               "Product", "Version", "Update", "Edition", "Language"]
     # CSV file containing details on products affected
     with open(f'cveProducts{year}.csv', 'w', newline='') as f:
         # create the csv writer
@@ -170,16 +188,26 @@ def writeToCSV(year, cveDetails, affectedProducts):
         for i in affectedProducts:
             writer.writerow(i)
 
+
 # list includes number of pages for the year, sha and total number of cve records for the year
-# numOfpages = {'2022':[227, 'd379b99e409beb3e8822b833b9d92abdf4097feb', '11308'], '2021':[338, 'c2af181acc00f9c48c361450a6d53e25a002e412', '16873'], '2017':[266, '726cb9ed34d371bec461bce4d79640eb0f40a3ed', '13269'], '2015':[119, '99f0a8da10052844e77baad5467f2e32d90c05fe', '5913'], }
-numOfpages = {'2020':[312, '03a9f57c6a47567bde261912fdb6d3ae622905e7', '15555'], '2019':[307, '6998c9b0e476e9f2dcbfd6ebff9503d774847252', '15306'], '2018':[296, '6988686c94470e073608fae0b039e4d06272a47d', '14759'], '2016':[117, '7b19190aa3dbaa35d014ff44a5cf607bec3f4565', '5837']}
+numOfpages = {
+    # '2022': [227, 'd379b99e409beb3e8822b833b9d92abdf4097feb', '11308'],
+    '2021': [338, 'c2af181acc00f9c48c361450a6d53e25a002e412', '16873'],
+    # '2017': [266, '726cb9ed34d371bec461bce4d79640eb0f40a3ed', '13269'],
+    # '2015': [119, '99f0a8da10052844e77baad5467f2e32d90c05fe', '5913'],
+}
+# numOfpages = {'2020':[312, '03a9f57c6a47567bde261912fdb6d3ae622905e7', '15555'], '2019':[307, '6998c9b0e476e9f2dcbfd6ebff9503d774847252', '15306'], '2018':[296, '6988686c94470e073608fae0b039e4d06272a47d', '14759'], '2016':[117, '7b19190aa3dbaa35d014ff44a5cf607bec3f4565', '5837']}
+
+
 def main():
     for year in numOfpages:
-        pageLinks = CveAllPageLinks(year, numOfpages[year][0], numOfpages[year][1], numOfpages[year][2])
+        pageLinks = CveAllPageLinks(
+            year, numOfpages[year][0], numOfpages[year][1], numOfpages[year][2])
         linkList = CveSinglePageLinks(pageLinks)
         cveDetails, affectedProducts = CveDetails(linkList)
         writeToCSV(year, cveDetails, affectedProducts)
     driver.close()
+
 
 if __name__ == '__main__':
     main()
