@@ -119,7 +119,7 @@ def affectedProducts_F(soup, cveID, affectedProducts):
 # Append the CVE details into list for storing into CSV file
 
 
-def storeInList(cveID, link, cvssScore, confidentialityImpact, integrityImpact, availabilityImpact, authentication, gainedAccess, vulnList, cveDetails):
+def storeInList_F(cveID, link, cvssScore, confidentialityImpact, integrityImpact, availabilityImpact, authentication, gainedAccess, vulnList, cveDetails):
 
     for i in vulnList:
         cveDetail = []
@@ -149,7 +149,7 @@ def storeInList(cveID, link, cvssScore, confidentialityImpact, integrityImpact, 
         # else:
         #     cveDetail.append('-')
         cveDetails.append(cveDetail)
-    return cveDetail
+    return cveDetails
 
  # Getting various basic information on CVEs
 
@@ -179,15 +179,15 @@ def basicCveDetail_F(link, soup, text, cveDetails, affectedProducts):
     affectedProducts = affectedProducts_F(soup, cveID, affectedProducts)
 
     # Append the CVE details into list for storing into CSV file
-    cveDetails = storeInList(cveID, link, cvssScore, confidentialityImpact, integrityImpact,
-                             availabilityImpact, authentication, gainedAccess, vulnList, cveDetails)
+    cveDetails = storeInList_F(cveID, link, cvssScore, confidentialityImpact, integrityImpact,
+                               availabilityImpact, authentication, gainedAccess, vulnList, cveDetails)
 
     return cveDetails, affectedProducts
 
 # Scrape info from website about each CVE
 
 
-def CveDetails(linkList):
+def CveDetails_F(linkList):
     cveDetails_l = []
     affectedProducts_l = []
     for link in linkList:
@@ -209,7 +209,7 @@ def writeToCSV(year, cveDetails, affectedProducts):
     time = now.strftime("%H%Mh")
     header1 = ["CVE ID", 'Link to CVE', 'CVSS Score', 'Confidentiality Impact', 'Integrity Impact',
                'Availability Impact', 'Authentication', 'Gained Access', 'Vulnerability Type(s)']
-    # CSV file containing details on CSV
+
     with open(f'cveDetails{year}{time}.csv', 'w', newline='') as f:
         # create the csv writer
         writer = csv.writer(f)
@@ -217,14 +217,10 @@ def writeToCSV(year, cveDetails, affectedProducts):
         for i in cveDetails:
             writer.writerow(i)
 
-    print()
-    print(cveDetails)
-    print(affectedProducts)
-
     header2 = ["CVE ID", "#", "Product Type", "Vendor",
                "Product", "Version", "Update", "Edition", "Language"]
     # CSV file containing details on products affected
-    with open(f'cveProducts{year}.csv', 'w', newline='') as f:
+    with open(f'cveProducts{year}{time}.csv', 'w', newline='') as f:
         # create the csv writer
         writer = csv.writer(f)
         writer.writerow(header2)
@@ -247,7 +243,8 @@ def main():
         pageLinks = CveAllPageLinks(
             year, numOfpages[year][0], numOfpages[year][1], numOfpages[year][2])
         linkList = CveSinglePageLinks(pageLinks)
-        cveDetails, affectedProducts = CveDetails(linkList)
+        cveDetails, affectedProducts = CveDetails_F(linkList)
+
         writeToCSV(year, cveDetails, affectedProducts)
     driver.close()
 
