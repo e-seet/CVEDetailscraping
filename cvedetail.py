@@ -1,11 +1,10 @@
 import csv
 from bs4 import BeautifulSoup
 from selenium import webdriver
-from selenium_stealth import stealth
+from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 
 import datetime
-
 
 # driver = webdriver.Chrome(ChromeDriverManager().install())
 # options = webdriver.ChromeOptions()
@@ -13,12 +12,6 @@ import datetime
 # options.add_argument("start-maximized")
 # options.add_experimental_option("excludeSwitches", ["enable-automation"])
 # options.add_experimental_option('useAutomationExtension', False)
-
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager
-from selenium.webdriver.common.by import By
-
 
 # stealth(driver,
 #         languages=["en-US", "en"],
@@ -28,7 +21,6 @@ from selenium.webdriver.common.by import By
 #         renderer="Intel Iris OpenGL Engine",
 #         fix_hairline=True,
 #         )
-
 
 # Get all the pages from 1 to last
 def CveAllPageLinks(year, pages, sha, trc):
@@ -114,7 +106,6 @@ def affectedProducts_F(soup, cveID, affectedProducts):
 
 # Append the CVE details into list for storing into CSV file
 def storeInList_F(cveID, link, cvssScore, confidentialityImpact, integrityImpact, availabilityImpact, authentication, gainedAccess, vulnList, cveDetails):
-
     for i in vulnList:
         cveDetail = []
         cveDetail.append(cveID)
@@ -167,6 +158,7 @@ def basicCveDetail_F(link, soup, text, cveDetails, affectedProducts):
 
 # error, reopen driver
 def getDriverBack():
+
     s = Service(ChromeDriverManager().install())
     driver = webdriver.Chrome(service=s)
     driver.maximize_window()
@@ -225,17 +217,13 @@ def writeToCSV(year, cveDetails, affectedProducts):
 
 # list includes number of pages for the year, sha and total number of cve records for the year
 numOfpages = {
-    # '2022': [227, 'd379b99e409beb3e8822b833b9d92abdf4097feb', '11308'],
+    '2022': [227, 'd379b99e409beb3e8822b833b9d92abdf4097feb', '11308'],
     '2021': [338, 'c2af181acc00f9c48c361450a6d53e25a002e412', '16873'],
-    # '2017': [266, '726cb9ed34d371bec461bce4d79640eb0f40a3ed', '13269'],
-    # '2015': [119, '99f0a8da10052844e77baad5467f2e32d90c05fe', '5913'],
+    '2017': [266, '726cb9ed34d371bec461bce4d79640eb0f40a3ed', '13269'],
+    '2015': [119, '99f0a8da10052844e77baad5467f2e32d90c05fe', '5913'],
 }
-# numOfpages = {
-#     '2020':[312, '03a9f57c6a47567bde261912fdb6d3ae622905e7', '15555'],
-#     '2019':[307, '6998c9b0e476e9f2dcbfd6ebff9503d774847252', '15306'],
-#     '2018':[296, '6988686c94470e073608fae0b039e4d06272a47d', '14759'],
-#     '2016':[117, '7b19190aa3dbaa35d014ff44a5cf607bec3f4565', '5837']
-# }
+# numOfpages = {'2020':[312, '03a9f57c6a47567bde261912fdb6d3ae622905e7', '15555'], '2019':[307, '6998c9b0e476e9f2dcbfd6ebff9503d774847252', '15306'], '2018':[296, '6988686c94470e073608fae0b039e4d06272a47d', '14759'], '2016':[117, '7b19190aa3dbaa35d014ff44a5cf607bec3f4565', '5837']}
+
 
 def main():
     driver = getDriverBack()

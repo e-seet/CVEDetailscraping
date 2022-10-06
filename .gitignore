@@ -1,0 +1,9 @@
+.vscode
+.prettierrc
+chromedriver
+.bash_profile
+.prettierignore
+.DS_store
+test.py
+*h.csv
+*O.py
