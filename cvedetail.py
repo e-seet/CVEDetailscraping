@@ -4,6 +4,9 @@ from selenium import webdriver
 from selenium_stealth import stealth
 from webdriver_manager.chrome import ChromeDriverManager
 
+import datetime
+
+
 driver = webdriver.Chrome(ChromeDriverManager().install())
 options = webdriver.ChromeOptions()
 
@@ -23,6 +26,7 @@ stealth(driver,
 
 
 # Get all the pages from 1 to last
+
 def CveAllPageLinks(year, pages, sha, trc):
     pageLinks = []
     for page in range(1, pages+1):
@@ -46,137 +50,176 @@ def CveSinglePageLinks(pageLinks):
                 linkList.append(thelink)
     return linkList
 
+# To check if CVEs have multiple vulnerability types
 
-def basicCveDetail():
-    print("ok lo")
 
+def getVulneraebilityType_F(vulnerabilityType):
+
+    index1 = 0
+    vulnList = []
+    for i in range(len(vulnerabilityType)):
+        if i == 0:
+            index1 = i
+        if vulnerabilityType[i].isupper() and vulnerabilityType[i-1].islower():
+            index2 = i
+            vulnList.append(vulnerabilityType[index1:index2])
+            index1 = i
+        elif i == len(vulnerabilityType)-1:
+            if vulnerabilityType[i-1] == ' ':
+                index2 = i-1
+            else:
+                index2 = i
+            vulnList.append(vulnerabilityType[index1:index2])
+    if vulnList == []:
+        vulnList.append('')
+
+    return vulnList
+
+# Checking if CVE has any affected products
+
+
+def affectedProducts_F(soup, cveID, affectedProducts):
+    # Checking if CVE has any affected products
+    productList = []
+    count = 0
+    if soup.find("div", {"class": "errormsg"}) == None:
+        vulnProduct = soup.find("table", {"id": "vulnprodstable"})
+        vulnProduct = str(vulnProduct)
+        vulnProduct = vulnProduct.replace('\t', '')
+        vulnProduct = vulnProduct.replace('\n', '')
+        vulnProduct = vulnProduct.split("<")
+        # Getting details on affected products
+        for j in range(24, len(vulnProduct)):
+            if vulnProduct[j].startswith('td'):
+                if vulnProduct[j][vulnProduct[j].find('>') + 1:] != '':
+                    productList.append(
+                        vulnProduct[j][vulnProduct[j].find('>') + 1:])
+            elif vulnProduct[j].startswith('a'):
+                productList.append(
+                    vulnProduct[j][vulnProduct[j].find('>') + 1:])
+        # Counting the number of products affected
+        for i in range(len(vulnProduct)):
+            if 'td class="num">' in vulnProduct[i]:
+                count += 1
+        # Keeping the relevant details on affected products
+        countIndex = 0
+        for i in range(count):
+            product = []
+            product.append(cveID)
+            for j in range(countIndex, len(productList)):
+                if productList[j] == 'Version Details':
+                    countIndex = j + 2
+                    affectedProducts.append(product)
+                    break
+                else:
+                    product.append(productList[j])
+        # print(affectedProducts)
+    return affectedProducts
+
+# Append the CVE details into list for storing into CSV file
+
+
+def storeInList(cveID, link, cvssScore, confidentialityImpact, integrityImpact, availabilityImpact, authentication, gainedAccess, vulnList, cveDetails):
+
+    for i in vulnList:
+        cveDetail = []
+        cveDetail.append(cveID)
+        cveDetail.append(link)
+        cveDetail.append(cvssScore)
+        cveDetail.append(
+            confidentialityImpact[:confidentialityImpact.find('\n')])
+        cveDetail.append(integrityImpact[:integrityImpact.find('\n')])
+        cveDetail.append(
+            availabilityImpact[:availabilityImpact.find('\n')])
+        if "???" not in authentication:
+            cveDetail.append(authentication[:authentication.find('\n')])
+        else:
+            cveDetail.append(authentication)
+        cveDetail.append(gainedAccess)
+        if i != '':
+            cveDetail.append(i)
+        else:
+            cveDetail.append('-')
+        # if productList != []:
+        #     cveDetail.append(productList[2])  # Appending the vendor of the product
+        # else:
+        #     cveDetail.append('-')
+        # if count != 0:
+        #     cveDetail.append(count)
+        # else:
+        #     cveDetail.append('-')
+        cveDetails.append(cveDetail)
+    return cveDetail
+
+ # Getting various basic information on CVEs
+
+
+def basicCveDetail_F(link, soup, text, cveDetails, affectedProducts):
+    cveID = link[link.find('cve/') + 4:-1]
+    cvssScore = str(soup.find("div", {"class": "cvssbox"}))
+    cvssScore = cvssScore[cvssScore.find('>') + 1:cvssScore.find('</div>')]
+
+    confidentialityImpact = text[text.find(
+        'Confidentiality') + len('Confidentiality Impact') + 1:text.find('Integrity Impact') - 3]
+    integrityImpact = text[text.find(
+        'Integrity') + len('Integrity Impact') + 1:text.find('Availability Impact') - 3]
+    availabilityImpact = text[text.find(
+        'Availability') + len('Availability Impact') + 1:text.find('Access Complexity') - 3]
+    authentication = text[text.find(
+        'Authentication') + len('Authentication') + 1:text.find('Gained Access') - 3]
+    gainedAccess = text[text.find(
+        'Gained Access') + len('Gained Access') + 1:text.find('Vulnerability Type(s)') - 3]
+    vulnerabilityType = text[text.find(
+        'Vulnerability Type(s)') + len('Vulnerability Type(s)') + 2:text.find('CWE ID') - 3]
+
+    # To check if CVEs have multiple vulnerability types
+    vulnList = getVulneraebilityType_F(vulnerabilityType)
+
+    # Checking if CVE has any affected products
+    affectedProducts = affectedProducts_F(soup, cveID, affectedProducts)
+
+    # Append the CVE details into list for storing into CSV file
+    cveDetails = storeInList(cveID, link, cvssScore, confidentialityImpact, integrityImpact,
+                             availabilityImpact, authentication, gainedAccess, vulnList, cveDetails)
+
+    return cveDetails, affectedProducts
 
 # Scrape info from website about each CVE
+
+
 def CveDetails(linkList):
-    cveDetails = []
-    affectedProducts = []
+    cveDetails_l = []
+    affectedProducts_l = []
     for link in linkList:
         driver.get(link)
         page_source = driver.page_source
         soup = BeautifulSoup(page_source, 'lxml')
         text = soup.get_text()
 
-        # Getting various details on CVEs
-        cveID = link[link.find('cve/') + 4:-1]
-        cvssScore = str(soup.find("div", {"class": "cvssbox"}))
-        cvssScore = cvssScore[cvssScore.find('>') + 1:cvssScore.find('</div>')]
-        confidentialityImpact = text[text.find(
-            'Confidentiality') + len('Confidentiality Impact') + 1:text.find('Integrity Impact') - 3]
-        integrityImpact = text[text.find(
-            'Integrity') + len('Integrity Impact') + 1:text.find('Availability Impact') - 3]
-        availabilityImpact = text[text.find(
-            'Availability') + len('Availability Impact') + 1:text.find('Access Complexity') - 3]
-        authentication = text[text.find(
-            'Authentication') + len('Authentication') + 1:text.find('Gained Access') - 3]
-        gainedAccess = text[text.find(
-            'Gained Access') + len('Gained Access') + 1:text.find('Vulnerability Type(s)') - 3]
-        vulnerabilityType = text[text.find(
-            'Vulnerability Type(s)') + len('Vulnerability Type(s)') + 2:text.find('CWE ID') - 3]
+        cveDetails_l, affectedProducts_l = basicCveDetail_F(
+            link, soup, text, cveDetails_l, affectedProducts_l)
 
-        # To check if CVEs have multiple vulnerability types
-        index1 = 0
-        vulnList = []
-        for i in range(len(vulnerabilityType)):
-            if i == 0:
-                index1 = i
-            if vulnerabilityType[i].isupper() and vulnerabilityType[i-1].islower():
-                index2 = i
-                vulnList.append(vulnerabilityType[index1:index2])
-                index1 = i
-            elif i == len(vulnerabilityType)-1:
-                if vulnerabilityType[i-1] == ' ':
-                    index2 = i-1
-                else:
-                    index2 = i
-                vulnList.append(vulnerabilityType[index1:index2])
-        if vulnList == []:
-            vulnList.append('')
-
-        # Checking if CVE has any affected products
-        productList = []
-        count = 0
-        if soup.find("div", {"class": "errormsg"}) == None:
-            vulnProduct = soup.find("table", {"id": "vulnprodstable"})
-            vulnProduct = str(vulnProduct)
-            vulnProduct = vulnProduct.replace('\t', '')
-            vulnProduct = vulnProduct.replace('\n', '')
-            vulnProduct = vulnProduct.split("<")
-            # Getting details on affected products
-            for j in range(24, len(vulnProduct)):
-                if vulnProduct[j].startswith('td'):
-                    if vulnProduct[j][vulnProduct[j].find('>') + 1:] != '':
-                        productList.append(
-                            vulnProduct[j][vulnProduct[j].find('>') + 1:])
-                elif vulnProduct[j].startswith('a'):
-                    productList.append(
-                        vulnProduct[j][vulnProduct[j].find('>') + 1:])
-            # Counting the number of products affected
-            for i in range(len(vulnProduct)):
-                if 'td class="num">' in vulnProduct[i]:
-                    count += 1
-            # Keeping the relevant details on affected products
-            countIndex = 0
-            for i in range(count):
-                product = []
-                product.append(cveID)
-                for j in range(countIndex, len(productList)):
-                    if productList[j] == 'Version Details':
-                        countIndex = j + 2
-                        affectedProducts.append(product)
-                        break
-                    else:
-                        product.append(productList[j])
-            # print(affectedProducts)
-
-        # Append the CVE details into list for storing into CSV file
-        for i in vulnList:
-            cveDetail = []
-            cveDetail.append(cveID)
-            cveDetail.append(link)
-            cveDetail.append(cvssScore)
-            cveDetail.append(
-                confidentialityImpact[:confidentialityImpact.find('\n')])
-            cveDetail.append(integrityImpact[:integrityImpact.find('\n')])
-            cveDetail.append(
-                availabilityImpact[:availabilityImpact.find('\n')])
-            if "???" not in authentication:
-                cveDetail.append(authentication[:authentication.find('\n')])
-            else:
-                cveDetail.append(authentication)
-            cveDetail.append(gainedAccess)
-            if i != '':
-                cveDetail.append(i)
-            else:
-                cveDetail.append('-')
-            # if productList != []:
-            #     cveDetail.append(productList[2])  # Appending the vendor of the product
-            # else:
-            #     cveDetail.append('-')
-            # if count != 0:
-            #     cveDetail.append(count)
-            # else:
-            #     cveDetail.append('-')
-            cveDetails.append(cveDetail)
-    return cveDetails, affectedProducts
+    return cveDetails_l, affectedProducts_l
 
 # Write the cve details to CSV file
 
 
 def writeToCSV(year, cveDetails, affectedProducts):
+    now = datetime.datetime.now()
+    time = now.strftime("%H%Mh")
     header1 = ["CVE ID", 'Link to CVE', 'CVSS Score', 'Confidentiality Impact', 'Integrity Impact',
                'Availability Impact', 'Authentication', 'Gained Access', 'Vulnerability Type(s)']
     # CSV file containing details on CSV
-    with open(f'cveDetails{year}.csv', 'w', newline='') as f:
+    with open(f'cveDetails{year}{time}.csv', 'w', newline='') as f:
         # create the csv writer
         writer = csv.writer(f)
         writer.writerow(header1)
         for i in cveDetails:
             writer.writerow(i)
+
+    print()
+    print(cveDetails)
+    print(affectedProducts)
 
     header2 = ["CVE ID", "#", "Product Type", "Vendor",
                "Product", "Version", "Update", "Edition", "Language"]
@@ -192,7 +235,7 @@ def writeToCSV(year, cveDetails, affectedProducts):
 # list includes number of pages for the year, sha and total number of cve records for the year
 numOfpages = {
     # '2022': [227, 'd379b99e409beb3e8822b833b9d92abdf4097feb', '11308'],
-    '2021': [338, 'c2af181acc00f9c48c361450a6d53e25a002e412', '16873'],
+    '2021': [1, 'c2af181acc00f9c48c361450a6d53e25a002e412', '16873'],
     # '2017': [266, '726cb9ed34d371bec461bce4d79640eb0f40a3ed', '13269'],
     # '2015': [119, '99f0a8da10052844e77baad5467f2e32d90c05fe', '5913'],
 }
