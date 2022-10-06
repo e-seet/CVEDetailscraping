@@ -7,22 +7,27 @@ from webdriver_manager.chrome import ChromeDriverManager
 import datetime
 
 
-driver = webdriver.Chrome(ChromeDriverManager().install())
-options = webdriver.ChromeOptions()
+# driver = webdriver.Chrome(ChromeDriverManager().install())
+# options = webdriver.ChromeOptions()
 
-options.add_argument("start-maximized")
-options.add_experimental_option("excludeSwitches", ["enable-automation"])
-options.add_experimental_option('useAutomationExtension', False)
+# options.add_argument("start-maximized")
+# options.add_experimental_option("excludeSwitches", ["enable-automation"])
+# options.add_experimental_option('useAutomationExtension', False)
+
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.common.by import By
 
 
-stealth(driver,
-        languages=["en-US", "en"],
-        vendor="Google Inc.",
-        platform="Win32",
-        webgl_vendor="Intel Inc.",
-        renderer="Intel Iris OpenGL Engine",
-        fix_hairline=True,
-        )
+# stealth(driver,
+#         languages=["en-US", "en"],
+#         vendor="Google Inc.",
+#         platform="Win32",
+#         webgl_vendor="Intel Inc.",
+#         renderer="Intel Iris OpenGL Engine",
+#         fix_hairline=True,
+#         )
 
 
 # Get all the pages from 1 to last
@@ -37,7 +42,7 @@ def CveAllPageLinks(year, pages, sha, trc):
 
 
 # Get all the links to each CVE in a page
-def CveSinglePageLinks(pageLinks):
+def CveSinglePageLinks(driver, pageLinks):
     linkList = []
     for x in pageLinks:
         driver.get(x)
@@ -184,20 +189,41 @@ def basicCveDetail_F(link, soup, text, cveDetails, affectedProducts):
 
     return cveDetails, affectedProducts
 
-# Scrape info from website about each CVE
+# error, reopen driver
 
 
-def CveDetails_F(linkList):
+def getDriverBack():
+
+    s = Service(ChromeDriverManager().install())
+    driver = webdriver.Chrome(service=s)
+    driver.maximize_window()
+
+    return driver
+    # Scrape info from website about each CVE
+
+
+def CveDetails_F(driver, linkList):
     cveDetails_l = []
     affectedProducts_l = []
     for link in linkList:
-        driver.get(link)
-        page_source = driver.page_source
-        soup = BeautifulSoup(page_source, 'lxml')
-        text = soup.get_text()
-
-        cveDetails_l, affectedProducts_l = basicCveDetail_F(
-            link, soup, text, cveDetails_l, affectedProducts_l)
+        try:
+            # print(link)
+            driver.get(link)  # here
+            page_source = driver.page_source
+            soup = BeautifulSoup(page_source, 'lxml')
+            text = soup.get_text()
+            cveDetails_l, affectedProducts_l = basicCveDetail_F(
+                link, soup, text, cveDetails_l, affectedProducts_l)
+        except:
+            # print("except")
+            # print(link)
+            driver = getDriverBack()
+            driver.get(link)  # here
+            page_source = driver.page_source
+            soup = BeautifulSoup(page_source, 'lxml')
+            text = soup.get_text()
+            cveDetails_l, affectedProducts_l = basicCveDetail_F(
+                link, soup, text, cveDetails_l, affectedProducts_l)
 
     return cveDetails_l, affectedProducts_l
 
@@ -239,14 +265,19 @@ numOfpages = {
 
 
 def main():
+    driver = getDriverBack()
     for year in numOfpages:
         pageLinks = CveAllPageLinks(
             year, numOfpages[year][0], numOfpages[year][1], numOfpages[year][2])
-        linkList = CveSinglePageLinks(pageLinks)
-        cveDetails, affectedProducts = CveDetails_F(linkList)
+        linkList = CveSinglePageLinks(driver, pageLinks)
+        cveDetails, affectedProducts = CveDetails_F(driver, linkList)
 
         writeToCSV(year, cveDetails, affectedProducts)
-    driver.close()
+
+    try:
+        driver.close()
+    except:
+        print("driver already closed")
 
 
 if __name__ == '__main__':
